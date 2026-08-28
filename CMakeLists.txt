@@ -18,7 +18,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -Wno-missing-field-initializers)
 endif()
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick QuickControls2)
+find_package(Qt6 6.2 REQUIRED COMPONENTS Core Gui Quick QuickControls2)
 find_package(GTest REQUIRED)
 
 qt_policy(SET QTP0004 NEW)
