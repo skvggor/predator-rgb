@@ -20,7 +20,11 @@ int main(int argc, char* argv[]) {
         }
     });
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     engine.loadFromModule("predator_rgb", "Main");
+#else
+    engine.load(QUrl(QStringLiteral("qrc:/qt/qml/predator_rgb/qml/Main.qml")));
+#endif
 
     fprintf(stderr, "rootObjects count: %d\n", static_cast<int>(engine.rootObjects().size()));
     if (engine.rootObjects().isEmpty()) {

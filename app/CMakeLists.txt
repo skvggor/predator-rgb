@@ -8,8 +8,6 @@ set_target_properties(predator-rgb PROPERTIES
     WIN32_EXECUTABLE ON
 )
 
-qt_policy(SET QTP0001 NEW)
-
 set_source_files_properties(qml/Theme.qml PROPERTIES QT_QML_SINGLETON_TYPE TRUE)
 
 qt_add_qml_module(predator-rgb

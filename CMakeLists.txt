@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.21)
-project(predator-rgb LANGUAGES CXX VERSION 0.1.0)
+
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PROJECT_VERSION)
+string(STRIP "${PROJECT_VERSION}" PROJECT_VERSION)
+
+project(predator-rgb LANGUAGES CXX VERSION ${PROJECT_VERSION})
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -14,10 +18,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Wpedantic -Wno-missing-field-initializers)
 endif()
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Gui Quick QuickControls2)
+find_package(Qt6 6.2 REQUIRED COMPONENTS Core Gui Quick QuickControls2)
 find_package(GTest REQUIRED)
-
-qt_policy(SET QTP0004 NEW)
 
 enable_testing()
 

@@ -2,7 +2,6 @@ name: Release
 
 on:
   push:
-    branches: [main]
     tags: ["v*"]
 
 permissions:
@@ -13,7 +12,16 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify version matches tag
+        run: |
+          file_version="$(tr -d '[:space:]' < VERSION)"
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [[ "$tag_version" != "$file_version" ]]; then
+            echo "version mismatch: tag v$tag_version, VERSION file $file_version" >&2
+            exit 1
+          fi
 
       - name: Install dependencies
         run: |
@@ -36,29 +44,47 @@ jobs:
         run: ctest --test-dir build --output-on-failure
 
       - name: Package
-        if: startsWith(github.ref, 'refs/tags/')
         run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          mkdir -p "release/predator-rgb-${VERSION}-linux-x86_64"
-          cp build/app/predator-rgb "release/predator-rgb-${VERSION}-linux-x86_64/"
-          cp README.md LICENSE MANUAL.md "release/predator-rgb-${VERSION}-linux-x86_64/"
-          tar -czf "release/predator-rgb-${VERSION}-linux-x86_64.tar.gz" -C release "predator-rgb-${VERSION}-linux-x86_64"
+          VERSION="${GITHUB_REF_NAME}"
+          ASSET="predator-rgb-${VERSION}-linux-x86_64"
+          mkdir -p "release/${ASSET}"
+          cp build/app/predator-rgb "release/${ASSET}/"
+          cp README.md LICENSE MANUAL.md "release/${ASSET}/"
+          tar -czf "release/${ASSET}.tar.gz" -C release "${ASSET}"
 
       - name: Generate checksums
-        if: startsWith(github.ref, 'refs/tags/')
         working-directory: release
         run: |
-          sha256sum predator-rgb-*-linux-x86_64.tar.gz > SHA256SUMS.txt
-          echo "## SHA256" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          cat SHA256SUMS.txt >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          for file in *.tar.gz; do
+            sha256sum "$file" > "${file}.sha256"
+          done
+
+      - name: Delete existing release (allow re-run)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release delete "$GITHUB_REF_NAME" --yes 2>/dev/null || true
 
       - name: Create release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.0.6
         with:
           files: |
-            release/predator-rgb-*-linux-x86_64.tar.gz
-            release/SHA256SUMS.txt
+            release/*.tar.gz
+            release/*.sha256
           generate_release_notes: true
+
+      - name: Verify published release
+        run: |
+          set -euo pipefail
+          TAG="$GITHUB_REF_NAME"
+          ASSET="predator-rgb-${TAG}-linux-x86_64.tar.gz"
+          BASE="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+
+          for file in "$ASSET" "${ASSET}.sha256"; do
+            curl --fail --silent --head --location "${BASE}/${file}" -o /dev/null
+            echo "asset published: ${BASE}/${file}"
+          done
+
+          cd release
+          cat "${ASSET}.sha256"
+          sha256sum -c "${ASSET}.sha256"
+          echo "checksum verified"
