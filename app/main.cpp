@@ -6,8 +6,8 @@
 #include "controller.h"
 
 int main(int argc, char* argv[]) {
-    QGuiApplication application(argc, argv);
     QQuickStyle::setStyle(QStringLiteral("Material"));
+    QGuiApplication application(argc, argv);
 
     predator::Controller controller;
 
